@@ -1,0 +1,118 @@
+# Node modules and dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs and generated files
+frontend/dist/
+frontend/build/
+backend/uploads/
+backend/data/
+backend/logs/
+backend/chroma/
+backend/.chroma/
+
+# Environment and config files
+.env
+.env.*
+
+# Log files
+*.log
+logs/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Test and coverage files
+test-results/
+coverage/
+.nyc_output
+
+# Cache directories
+.cache/
+.parcel-cache/
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Python files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Large binary files
+*.pdf
+*.docx
+*.doc
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.svg
+*.ico
+*.mp3
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.wav
+*.ogg
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.mdb
+*.accdb
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        input[type="file"] {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Upload Test</h1>
+    
+    <div>
+        <h3>Test Server Status</h3>
+        <button onclick="checkHealth()">Check Health</button>
+        <div id="health-status"></div>
+    </div>
+
+    <div class="upload-area" id="uploadArea">
+        <p>Drag and drop a file here, or click to select</p>
+        <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md">
+        <br>
+        <button onclick="uploadFile()" id="uploadBtn">Upload File</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const result = document.getElementById('result');
+
+        // Test both servers
+        const TEST_SERVER = 'http://localhost:8001';
+        const MAIN_SERVER = 'http://localhost:8000';
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+            }
+        });
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        async function checkHealth() {
+            const healthStatus = document.getElementById('health-status');
+            
+            try {
+                // Test both servers
+                const testResponse = await fetch(`${TEST_SERVER}/health`);
+                const mainResponse = await fetch(`${MAIN_SERVER}/health`);
+                
+                const testHealth = testResponse.ok ? await testResponse.json() : null;
+                const mainHealth = mainResponse.ok ? await mainResponse.json() : null;
+                
+                healthStatus.innerHTML = `
+                    <div class="result ${testHealth ? 'success' : 'error'}">
+                        Test Server (8001): ${testHealth ? 'OK' : 'Not running'}
+                    </div>
+                    <div class="result ${mainHealth ? 'success' : 'error'}">
+                        Main Server (8000): ${mainHealth ? 'OK' : 'Not running'}
+                    </div>
+                `;
+            } catch (error) {
+                healthStatus.innerHTML = `<div class="result error">Error checking health: ${error.message}</div>`;
+            }
+        }
+
+        async function uploadFile() {
+            const file = fileInput.files[0];
+            if (!file) {
+                showResult('Please select a file first', 'error');
+                return;
+            }
+
+            showResult('Uploading...', 'loading');
+            uploadBtn.disabled = true;
+
+            // Try test server first
+            try {
+                await uploadToServer(file, TEST_SERVER, '/test-upload');
+                showResult('✅ Upload successful to test server!', 'success');
+            } catch (error) {
+                console.error('Test server failed:', error);
+                
+                // Try main server
+                try {
+                    await uploadToServer(file, MAIN_SERVER, '/api/documents/upload');
+                    showResult('✅ Upload successful to main server!', 'success');
+                } catch (mainError) {
+                    console.error('Main server failed:', mainError);
+                    showResult(`❌ Upload failed on both servers:\nTest: ${error.message}\nMain: ${mainError.message}`, 'error');
+                }
+            }
+
+            uploadBtn.disabled = false;
+        }
+
+        async function uploadToServer(file, serverUrl, endpoint) {
+            const formData = new FormData();
+            formData.append('document', file);
+
+            const response = await fetch(`${serverUrl}${endpoint}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(`${response.status}: ${errorData.error || errorData.message || 'Upload failed'}`);
+            }
+
+            return await response.json();
+        }
+
+        function showResult(message, type) {
+            result.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        // Check health on page load
+        checkHealth();
+    </script>
+</body>
+</html>
