@@ -262,6 +262,34 @@ router.post('/reindex', async (req, res) => {
   }
 });
 
+// Debug endpoint to see raw document data
+router.get('/debug', async (req, res) => {
+  try {
+    const documents = await documentProcessor.getAllDocuments();
+    const rawDocuments = Array.from(documentProcessor.documents.values());
+    
+    res.json({
+      success: true,
+      debug: {
+        processedDocuments: documents,
+        rawDocuments: rawDocuments.map(doc => ({
+          id: doc.id,
+          filename: doc.filename,
+          chunksCount: doc.chunks?.length || 0,
+          chunksPreview: doc.chunks?.slice(0, 1) || []
+        }))
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error in debug endpoint:', error);
+    res.status(500).json({
+      error: 'Debug endpoint failed',
+      message: error.message
+    });
+  }
+});
+
 // Get document statistics
 router.get('/stats/overview', async (req, res) => {
   try {
@@ -271,7 +299,7 @@ router.get('/stats/overview', async (req, res) => {
       totalDocuments: documents.length,
       totalSize: documents.reduce((sum, doc) => sum + (doc.size || 0), 0),
       totalPages: documents.reduce((sum, doc) => sum + (doc.pages || 0), 0),
-      totalChunks: documents.reduce((sum, doc) => sum + (doc.chunks?.length || 0), 0),
+      totalChunks: documents.reduce((sum, doc) => sum + (doc.chunks || 0), 0),
       fileTypes: {}
     };
 

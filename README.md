@@ -1,6 +1,6 @@
-# PadalayAI - AI-Powered Document Analysis
+# PadalayAI - Your AI Author's Assistant
 
-PadalayAI is a comprehensive document analysis platform that uses Large Language Models (LLMs) with Retrieval-Augmented Generation (RAG) to help authors analyze their draft documents. The system provides intelligent insights, answers analytical questions, and helps authors understand their work better.
+PadalayAI is your personal AI author's assistant, using Large Language Models (LLMs) with Retrieval-Augmented Generation (RAG) to help you actively improve your drafts. Go beyond simple analysis and receive targeted feedback, refine your writing style, and get actionable suggestions to strengthen your arguments and narrative.
 
 ## Features
 
@@ -81,6 +81,7 @@ frontend/
 ### Prerequisites
 - Node.js 18+ and npm
 - OpenAI API key (optional, for full functionality)
+- Chroma
 
 ### Backend Setup
 
@@ -100,8 +101,13 @@ frontend/
    # Edit .env with your settings
    
    ```
-chroma run --host localhost --port 8001
-4. **Start the server:**
+
+4. **Start ChromaDB**
+   ```bash
+   chroma run --host localhost --port 8001
+   ```
+
+5. **Start the server:**
    ```bash
    npm run dev
    ```
