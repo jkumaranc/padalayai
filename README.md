@@ -34,6 +34,76 @@ PadalayAI is your personal AI author's assistant, using Large Language Models (L
 
 ## Architecture
 
+### System Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              PadalayAI Architecture                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐    HTTP/REST API    ┌─────────────────────────────────────┐
+│                 │◄──────────────────►│                                     │
+│   React Frontend│                    │           Express Backend           │
+│                 │                    │                                     │
+│  ┌─────────────┐│                    │  ┌─────────────┐ ┌─────────────────┐│
+│  │ Documents   ││                    │  │   Routes    │ │   Middleware    ││
+│  │ Query       ││                    │  │             │ │                 ││
+│  │ History     ││                    │  │ documents.js│ │ validation.js   ││
+│  │ Dashboard   ││                    │  │ queries.js  │ │ cors, helmet    ││
+│  └─────────────┘│                    │  └─────────────┘ └─────────────────┘│
+│                 │                    │           │                         │
+│  ┌─────────────┐│                    │           ▼                         │
+│  │   API       ││                    │  ┌─────────────────────────────────┐│
+│  │  Service    ││                    │  │           Services              ││
+│  └─────────────┘│                    │  │                                 ││
+└─────────────────┘                    │  │ ┌─────────────┐ ┌─────────────┐ ││
+                                       │  │ │DocumentProc │ │ RAGService  │ ││
+                                       │  │ │             │ │             │ ││
+                                       │  │ │ PDF Parse   │ │ Embeddings  │ ││
+                                       │  │ │ Text Chunk  │ │ Vector Search│ ││
+                                       │  │ └─────────────┘ └─────────────┘ ││
+                                       │  └─────────────────────────────────┘│
+                                       └─────────────────────────────────────┘
+                                                        │
+                                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              External Services                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────────────┐  │
+│  │   ChromaDB      │    │   OpenAI API    │    │    File System          │  │
+│  │                 │    │                 │    │                         │  │
+│  │ Vector Storage  │    │ GPT Models      │    │ ┌─────────────────────┐ │  │
+│  │ Embeddings      │    │ Embeddings      │    │ │ uploads/documents/  │ │  │
+│  │ Similarity      │    │ Completions     │    │ │ data/documents.json │ │  │
+│  │ Search          │    │                 │    │ │ data/query_history  │ │  │
+│  │                 │    │                 │    │ │ logs/               │ │  │
+│  │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ └─────────────────────┘ │  │
+│  │ │ Fallback:   │ │    │ │ Fallback:   │ │    │                         │  │
+│  │ │ In-Memory   │ │    │ │ Simple TF-  │ │    │                         │  │
+│  │ │ Vector Store│ │    │ │ IDF Embed   │ │    │                         │  │
+│  │ └─────────────┘ │    │ └─────────────┘ │    │                         │  │
+│  └─────────────────┘    └─────────────────┘    └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                                Data Flow
+                               ═══════════
+
+1. User uploads document → Document Processing → Text Extraction & Chunking
+2. Chunks → Embedding Generation → Vector Storage (ChromaDB/In-Memory)
+3. User submits query → Query Embedding → Similarity Search → Context Retrieval
+4. Context + Query → LLM Processing → Generated Answer → Response to User
+5. All interactions logged → Query History → Persistent Storage
+
+                              Key Features
+                             ═══════════════
+
+• Graceful Degradation: Falls back to in-memory storage if ChromaDB unavailable
+• Error Recovery: Automatic ChromaDB reconnection and fallback mechanisms  
+• Upload Safety: Nodemon ignores upload directories to prevent server restarts
+• Robust Processing: Handles PDF, DOCX, TXT, MD with comprehensive error handling
+```
+
 ### Backend (Node.js/Express)
 ```
 backend/
