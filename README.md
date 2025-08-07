@@ -102,13 +102,27 @@ frontend/
    
    ```
 
-4. **Start ChromaDB**
+4. **Start ChromaDB (Optional - will fallback to in-memory storage if not available)**
    ```bash
+   # Option 1: Use the setup script
+   chmod +x setup-chromadb.sh
+   ./setup-chromadb.sh
+   
+   # Option 2: Manual setup
+   pip install chromadb
    chroma run --host localhost --port 8001
    ```
 
 5. **Start the server:**
    ```bash
+   # Option 1: Use the restart script (recommended)
+   chmod +x restart-server.sh
+   ./restart-server.sh
+   
+   # Option 2: Manual start with upload-safe configuration
+   npm run dev:watch
+   
+   # Option 3: Standard development mode
    npm run dev
    ```
 
@@ -145,6 +159,7 @@ FRONTEND_URL=http://localhost:3000
 
 # OpenAI Configuration (Required for full LLM features)
 OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_BASE_URL=your_openai_api_base_url
 
 # File Upload Configuration
 MAX_FILE_SIZE=52428800  # 50MB
@@ -219,10 +234,19 @@ CORS_ORIGIN=http://localhost:3000
 
 ## Development
 
+### Utility Scripts
+
+The project includes several utility scripts to help with common tasks:
+
+- **`./restart-server.sh`** - Safely restart the backend server with upload-safe configuration
+- **`./setup-chromadb.sh`** - Install and start ChromaDB vector database
+- **`./reset-chromadb.sh`** - Clean corrupted ChromaDB database and reset to fresh state
+
 ### Backend Development
 ```bash
 cd backend
 npm run dev        # Start with nodemon
+npm run dev:watch  # Start with upload-safe nodemon config (recommended)
 npm run start      # Production start
 npm run lint       # Run ESLint
 ```
@@ -285,26 +309,41 @@ CMD ["npm", "start"]
 
 ### Common Issues
 
-1. **"Cannot connect to server"**
+1. **"Network Error" during file uploads**
+   - **Cause**: Server restarting due to file change detection
+   - **Solution**: Use `npm run dev:watch` or `./restart-server.sh` which ignores upload directories
+   - **Prevention**: The `nodemon.json` configuration prevents server restarts on file uploads
+
+2. **"ChromaDB compaction error"**
+   - **Cause**: Corrupted ChromaDB database
+   - **Solution**: Run `./reset-chromadb.sh` to clean the database
+   - **Fallback**: System automatically falls back to in-memory storage
+
+3. **"Cannot connect to server"**
    - Ensure backend is running on port 8000
    - Check CORS configuration
    - Verify frontend proxy settings
 
-2. **"OpenAI API errors"**
+4. **"OpenAI API errors"**
    - Verify API key is correct and active
    - Check API usage limits and billing
    - Ensure proper environment variable setup
 
-3. **"File upload fails"**
+5. **"File upload fails"**
    - Check file size (max 50MB)
    - Verify file format is supported
    - Ensure upload directory exists and is writable
 
-4. **"Poor query results"**
+6. **"Poor query results"**
    - Try more specific questions
    - Adjust temperature settings
    - Ensure documents are properly processed
    - Check document content quality
+
+7. **"Zero chunks showing for uploaded documents"**
+   - Check if document processing completed successfully
+   - Verify PDF/DOCX files contain extractable text
+   - Refresh the frontend to clear cached data
 
 ### Performance Optimization
 
