@@ -8,7 +8,8 @@ const documentSchema = Joi.object({
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain',
-    'text/markdown'
+    'text/markdown',
+    'application/vnd.apple.pages'
   ).required()
 });
 
