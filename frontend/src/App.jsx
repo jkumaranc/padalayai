@@ -6,6 +6,7 @@ import Documents from './pages/Documents'
 import Query from './pages/Query'
 import History from './pages/History'
 import Settings from './pages/Settings'
+import DigitalPersona from './pages/DigitalPersona'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/documents" element={<Documents />} />
         <Route path="/query" element={<Query />} />
+        <Route path="/digital-persona" element={<DigitalPersona />} />
         <Route path="/history" element={<History />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>

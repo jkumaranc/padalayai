@@ -38,11 +38,20 @@ export class RAGService {
         this.chroma = new ChromaClient({
           path: process.env.CHROMA_URL || 'http://localhost:8001'
         });
+
+        const embeddingDimension = parseInt(process.env.EMBEDDING_DIMENSION, 10);
+        if (isNaN(embeddingDimension)) {
+          throw new Error('EMBEDDING_DIMENSION is not set in your .env file.');
+        }
         
         // Test connection with a timeout
         const testPromise = this.chroma.getOrCreateCollection({
           name: 'padalayai_documents',
-          metadata: { description: 'Document chunks for PadalayAI' }
+          metadata: {
+            "hnsw:space": "l2",
+            "hnsw:dim": embeddingDimension,
+            'description': 'Document chunks for Padalayai'
+          }
         });
         
         // Add timeout to prevent hanging
@@ -418,6 +427,7 @@ Answer:`;
         return response.choices[0].message.content.trim();
 
       } catch (error) {
+        console.error(error)
         logger.warn('Error generating OpenAI answer, using fallback:', error.message);
       }
     }

@@ -4,6 +4,7 @@ import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import { v4 as uuidv4 } from 'uuid';
 import winston from 'winston';
+import { extractTextFromPages } from './pagesParser.js';
 
 const logger = winston.createLogger({
   level: 'info',
@@ -129,6 +130,9 @@ export class DocumentProcessor {
         case 'text/plain':
         case 'text/markdown':
           return fileBuffer.toString('utf8');
+        case 'application/vnd.apple.pages':
+        case 'application/x-iwork-pages-sffpages':
+          return await extractTextFromPages(filepath)
 
         default:
           // Try to read as text

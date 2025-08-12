@@ -3,13 +3,15 @@ import axios from 'axios'
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 // Create axios instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000, // 30 seconds
   headers: {
     'Content-Type': 'application/json',
   },
 })
+
+
 
 // Request interceptor
 api.interceptors.request.use(
@@ -177,15 +179,18 @@ export const validateFile = (file) => {
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain',
-    'text/markdown'
+    'text/markdown',
+    'application/vnd.apple.pages',
+    'application/x-iwork-pages-sffpages'
   ]
 
   if (file.size > maxSize) {
     throw new Error('File size must be less than 50MB')
   }
 
+  console.log(file.type)
   if (!allowedTypes.includes(file.type)) {
-    throw new Error('File type not supported. Please upload PDF, DOCX, TXT, or MD files.')
+    throw new Error('File type not supported. Please upload PDF, DOCX, TXT, Pages or MD files.')
   }
 
   return true

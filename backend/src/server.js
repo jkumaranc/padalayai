@@ -9,6 +9,7 @@ import winston from 'winston';
 
 import documentRoutes from './routes/documents.js';
 import queryRoutes from './routes/queries.js';
+import digitalPersonaRoutes from './routes/digitalPersona.js';
 import { initializeServices } from './services/index.js';
 
 // Load environment variables
@@ -78,6 +79,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/documents', documentRoutes);
 app.use('/api/queries', queryRoutes);
+app.use('/api/digital-persona', digitalPersonaRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -87,7 +89,8 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/health',
       documents: '/api/documents',
-      queries: '/api/queries'
+      queries: '/api/queries',
+      digitalPersona: '/api/digital-persona'
     }
   });
 });

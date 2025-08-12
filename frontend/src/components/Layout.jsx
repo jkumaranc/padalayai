@@ -6,7 +6,8 @@ import {
   MessageSquare, 
   History, 
   Settings,
-  Brain
+  Brain,
+  User
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -14,6 +15,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Documents', href: '/documents', icon: FileText },
   { name: 'Query', href: '/query', icon: MessageSquare },
+  { name: 'Digital Persona', href: '/digital-persona', icon: User },
   { name: 'History', href: '/history', icon: History },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]

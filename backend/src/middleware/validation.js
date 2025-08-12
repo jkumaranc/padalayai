@@ -9,7 +9,8 @@ const documentSchema = Joi.object({
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain',
     'text/markdown',
-    'application/vnd.apple.pages'
+    'application/vnd.apple.pages',
+    'application/x-iwork-pages-sffpages'
   ).required()
 });
 

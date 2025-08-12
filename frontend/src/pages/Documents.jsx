@@ -70,7 +70,8 @@ function Documents() {
       'application/pdf': ['.pdf'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
       'text/plain': ['.txt'],
-      'text/markdown': ['.md']
+      'text/markdown': ['.md'],
+      'application/vnd.apple.pages': ['.pages']
     },
     maxSize: 50 * 1024 * 1024, // 50MB
     multiple: false,
