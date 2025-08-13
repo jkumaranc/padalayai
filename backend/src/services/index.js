@@ -1,6 +1,8 @@
 import { DocumentProcessor } from './documentProcessor.js';
 import { RAGService } from './ragService.js';
 import { VectorStore } from './vectorStore.js';
+import { DigitalPersonaService } from './digitalPersonaService.js';
+import { initializeMCPClient, getMCPClient } from './mcpClient.js';
 import winston from 'winston';
 
 const logger = winston.createLogger({
@@ -13,6 +15,8 @@ const logger = winston.createLogger({
 let documentProcessor = null;
 let ragService = null;
 let vectorStore = null;
+let digitalPersonaService = null;
+let mcpClient = null;
 
 export async function initializeServices() {
   try {
@@ -31,6 +35,23 @@ export async function initializeServices() {
     ragService = new RAGService();
     await ragService.initialize();
     logger.info('RAG service initialized');
+
+    // Initialize MCP Client
+    try {
+      mcpClient = await initializeMCPClient();
+      logger.info('MCP client initialized');
+    } catch (error) {
+      logger.warn('MCP client initialization failed, continuing without MCP services:', error.message);
+      mcpClient = null;
+    }
+
+    // Initialize Digital Persona Service
+    digitalPersonaService = new DigitalPersonaService();
+    if (mcpClient) {
+      digitalPersonaService.setMCPClient(mcpClient);
+    }
+    await digitalPersonaService.initialize();
+    logger.info('Digital persona service initialized');
 
     logger.info('All services initialized successfully');
 
@@ -61,6 +82,17 @@ export function getVectorStore() {
   return vectorStore;
 }
 
+export function getDigitalPersonaService() {
+  if (!digitalPersonaService) {
+    throw new Error('Digital persona service not initialized');
+  }
+  return digitalPersonaService;
+}
+
+export function getMCPClientInstance() {
+  return mcpClient; // Can be null if initialization failed
+}
+
 export async function shutdownServices() {
   try {
     logger.info('Shutting down services...');
@@ -75,6 +107,10 @@ export async function shutdownServices() {
 
     if (vectorStore) {
       await vectorStore.close();
+    }
+
+    if (mcpClient) {
+      await mcpClient.shutdown();
     }
 
     logger.info('Services shut down successfully');
@@ -111,12 +147,25 @@ export async function getServicesHealth() {
       status: vectorStore && vectorStore.isInitialized ? 'healthy' : 'not_initialized'
     };
 
+    // Check Digital Persona Service
+    health.services.digitalPersonaService = {
+      status: digitalPersonaService && digitalPersonaService.isInitialized ? 'healthy' : 'not_initialized',
+      hasMCPClient: digitalPersonaService && digitalPersonaService.mcpClient ? true : false
+    };
+
+    // Check MCP Client
+    health.services.mcpClient = {
+      status: mcpClient && mcpClient.isInitialized ? 'healthy' : 'not_initialized',
+      servers: mcpClient ? mcpClient.getServerStatus() : {}
+    };
+
     // Overall health
-    const allHealthy = Object.values(health.services).every(service => 
-      service.status === 'healthy'
+    const coreServices = ['documentProcessor', 'ragService', 'vectorStore'];
+    const coreHealthy = coreServices.every(service => 
+      health.services[service] && health.services[service].status === 'healthy'
     );
     
-    health.overall = allHealthy ? 'healthy' : 'degraded';
+    health.overall = coreHealthy ? 'healthy' : 'degraded';
 
   } catch (error) {
     logger.error('Error checking services health:', error);

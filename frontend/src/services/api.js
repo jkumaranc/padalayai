@@ -11,8 +11,6 @@ export const api = axios.create({
   },
 })
 
-
-
 // Request interceptor
 api.interceptors.request.use(
   (config) => {

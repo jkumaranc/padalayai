@@ -16,6 +16,27 @@ export class DigitalPersonaService {
     this.isInitialized = false;
     this.socialMediaContent = new Map(); // Cache for social media content
     this.lastSyncTime = new Map(); // Track last sync time for each platform
+    this.mcpClient = null; // MCP client for calling MCP tools
+  }
+
+  // Method to call MCP tools
+  async callMCPTool(serverName, toolName, args = {}) {
+    if (!this.mcpClient) {
+      throw new Error('MCP client not initialized. Please set up MCP client first.');
+    }
+
+    try {
+      return await this.mcpClient.callTool(serverName, toolName, args);
+    } catch (error) {
+      logger.error(`Error calling MCP tool ${serverName}:${toolName}:`, error);
+      throw error;
+    }
+  }
+
+  // Method to set MCP client (to be called during initialization)
+  setMCPClient(mcpClient) {
+    this.mcpClient = mcpClient;
+    logger.info('MCP client set for DigitalPersonaService');
   }
 
   async initialize() {
@@ -35,7 +56,7 @@ export class DigitalPersonaService {
     }
   }
 
-  async syncSocialMediaContent(platforms = ['blogger', 'facebook', 'instagram']) {
+  async syncSocialMediaContent(platforms = ['blogger']) {
     if (!this.isInitialized) {
       throw new Error('Digital Persona service not initialized');
     }
@@ -57,14 +78,14 @@ export class DigitalPersonaService {
           case 'blogger':
             content = await this.fetchBloggerContent();
             break;
-          case 'facebook':
-            content = await this.fetchFacebookContent();
-            break;
-          case 'instagram':
-            content = await this.fetchInstagramContent();
-            break;
+          // case 'facebook':
+          //   content = await this.fetchFacebookContent();
+          //   break;
+          // case 'instagram':
+          //   content = await this.fetchInstagramContent();
+          //   break;
           default:
-            logger.warn(`Unknown platform: ${platform}`);
+            logger.warn(`Unsupported platform: ${platform}`);
             continue;
         }
 
@@ -104,46 +125,91 @@ export class DigitalPersonaService {
   }
 
   async fetchBloggerContent() {
-    // This would use the MCP blogger server
-    // For now, return mock data structure
-    return [
-      {
-        id: 'blog-1',
-        title: 'Sample Blog Post',
-        content: 'This is sample blog content that would be fetched from Blogger API',
-        published: new Date().toISOString(),
-        url: 'https://example.blogspot.com/post1',
-        platform: 'blogger'
+    try {
+      // Use MCP blogger server to fetch real blog posts
+      const response = await this.callMCPTool('blogger-server', 'get_blog_posts', {
+        maxResults: 25 // Get more posts for better content variety
+      });
+
+      if (response && response.content && response.content[0]) {
+        const data = JSON.parse(response.content[0].text);
+        
+        return data.posts.map(post => ({
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          published: post.published,
+          url: post.url,
+          platform: 'blogger',
+          labels: post.labels || []
+        }));
       }
-    ];
+
+      return [];
+    } catch (error) {
+      logger.error('Error fetching blogger content:', error);
+      // Return empty array instead of throwing to allow other platforms to work
+      return [];
+    }
   }
 
   async fetchFacebookContent() {
-    // This would use the MCP facebook server
-    // For now, return mock data structure
-    return [
-      {
-        id: 'fb-1',
-        message: 'Sample Facebook post content',
-        created_time: new Date().toISOString(),
-        permalink_url: 'https://facebook.com/post1',
-        platform: 'facebook'
+    try {
+      // Use MCP facebook server to fetch real Facebook posts
+      const response = await this.callMCPTool('facebook-server', 'get_facebook_posts', {
+        limit: 25 // Get more posts for better content variety
+      });
+
+      if (response && response.content && response.content[0]) {
+        const data = JSON.parse(response.content[0].text);
+        
+        return data.posts.map(post => ({
+          id: post.id,
+          message: post.message,
+          created_time: post.created_time,
+          permalink_url: post.permalink_url,
+          platform: 'facebook',
+          attachments: post.attachments || []
+        }));
       }
-    ];
+
+      return [];
+    } catch (error) {
+      logger.error('Error fetching facebook content:', error);
+      // Return empty array instead of throwing to allow other platforms to work
+      return [];
+    }
   }
 
   async fetchInstagramContent() {
-    // This would use the MCP instagram server
-    // For now, return mock data structure
-    return [
-      {
-        id: 'ig-1',
-        caption: 'Sample Instagram post caption',
-        timestamp: new Date().toISOString(),
-        permalink: 'https://instagram.com/p/post1',
-        platform: 'instagram'
+    try {
+      // Use MCP instagram server to fetch real Instagram media
+      const response = await this.callMCPTool('instagram-server', 'get_instagram_media', {
+        limit: 25 // Get more posts for better content variety
+      });
+
+      if (response && response.content && response.content[0]) {
+        const data = JSON.parse(response.content[0].text);
+        
+        return data.media.map(media => ({
+          id: media.id,
+          caption: media.caption,
+          timestamp: media.timestamp,
+          permalink: media.permalink,
+          platform: 'instagram',
+          media_type: media.media_type,
+          media_url: media.media_url,
+          like_count: media.like_count,
+          comments_count: media.comments_count
+        }));
       }
-    ];
+
+      return [];
+    } catch (error) {
+      logger.error('Error fetching instagram content:', error);
+      // Return empty array instead of throwing to allow other platforms to work
+      return [];
+    }
   }
 
   async processAndIndexContent(content, platform) {

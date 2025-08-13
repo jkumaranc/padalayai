@@ -19,8 +19,8 @@ const DigitalPersona = () => {
   const loadSyncStatus = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/digital-persona/sync-status');
-      setSyncStatus(response.data.syncStatus);
+      const response = await api.get('/api/digital-persona/sync-status');
+      setSyncStatus(response.syncStatus);
     } catch (error) {
       console.error('Error loading sync status:', error);
       setError('Failed to load sync status');
@@ -31,8 +31,9 @@ const DigitalPersona = () => {
 
   const loadStats = async () => {
     try {
-      const response = await api.get('/digital-persona/stats');
-      setStats(response.data.stats);
+      const response = await api.get('/api/digital-persona/stats');
+      console.log(response)
+      setStats(response.stats);
     } catch (error) {
       console.error('Error loading stats:', error);
     }
@@ -43,9 +44,9 @@ const DigitalPersona = () => {
       setSyncing(true);
       setError(null);
       
-      const response = await api.post('/digital-persona/sync', { platforms });
+      const response = await api.post('/api/digital-persona/sync', { platforms });
       
-      if (response.data.success) {
+      if (response.success) {
         await loadSyncStatus();
         await loadStats();
       }
@@ -65,15 +66,15 @@ const DigitalPersona = () => {
       setQuerying(true);
       setError(null);
       
-      const response = await api.post('/digital-persona/query', {
+      const response = await api.post('/api/digital-persona/query', {
         query: query.trim(),
         maxResults: 5,
         temperature: 0.7,
         includeContext: true
       });
       
-      if (response.data.success) {
-        setQueryResult(response.data.result);
+      if (response.success) {
+        setQueryResult(response.result);
       }
     } catch (error) {
       console.error('Error querying:', error);
@@ -90,9 +91,9 @@ const DigitalPersona = () => {
 
     try {
       setLoading(true);
-      const response = await api.delete(`/digital-persona/platform/${platform}`);
+      const response = await api.delete(`/api/digital-persona/platform/${platform}`);
       
-      if (response.data.success) {
+      if (response.success) {
         await loadSyncStatus();
         await loadStats();
       }

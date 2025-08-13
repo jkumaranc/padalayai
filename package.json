@@ -1,0 +1,56 @@
+{
+  "name": "padalayai-monorepo",
+  "version": "1.0.0",
+  "description": "PadalayAI - AI-powered document analysis platform with MCP servers",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "mcp/blogger-server",
+    "mcp/facebook-server",
+    "mcp/instagram-server"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "build:all": "npm run build --workspaces --if-present",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:blogger": "npm run watch --workspace=mcp/blogger-server",
+    "dev:facebook": "npm run watch --workspace=mcp/facebook-server",
+    "dev:instagram": "npm run watch --workspace=mcp/instagram-server",
+    "start:backend": "npm run start --workspace=backend",
+    "start:frontend": "npm run dev --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend --if-present",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:mcp": "npm run build --workspace=mcp/blogger-server && npm run build --workspace=mcp/facebook-server && npm run build --workspace=mcp/instagram-server",
+    "setup:chromadb": "./setup-chromadb.sh",
+    "start:chromadb": "chroma run --host localhost --port 8001",
+    "reset:chromadb": "./reset-chromadb.sh",
+    "dev:all": "concurrently \"npm run start:chromadb\" \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:blogger\" \"npm run dev:facebook\" \"npm run dev:instagram\"",
+    "dev:full": "concurrently \"npm run start:chromadb\" \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:blogger\" \"npm run dev:facebook\" \"npm run dev:instagram\"",
+    "dev:core": "concurrently \"npm run start:chromadb\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "start:all": "concurrently \"npm run start:chromadb\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "postinstall": "npm run build:mcp"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "ai",
+    "rag",
+    "document-analysis",
+    "llm",
+    "mcp",
+    "monorepo"
+  ],
+  "author": "PadalayAI",
+  "license": "MIT"
+}

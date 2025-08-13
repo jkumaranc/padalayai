@@ -1,5 +1,5 @@
 import express from 'express';
-import { DigitalPersonaService } from '../services/digitalPersonaService.js';
+import { getDigitalPersonaService } from '../services/index.js';
 import winston from 'winston';
 
 const router = express.Router();
@@ -9,30 +9,19 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console()]
 });
 
-// Initialize Digital Persona service
-const digitalPersonaService = new DigitalPersonaService();
-let isInitialized = false;
-
-// Initialize service on first request
-const ensureInitialized = async (req, res, next) => {
-  if (!isInitialized) {
-    try {
-      await digitalPersonaService.initialize();
-      isInitialized = true;
-    } catch (error) {
-      logger.error('Failed to initialize Digital Persona service:', error);
-      return res.status(500).json({
-        error: 'Failed to initialize Digital Persona service',
-        details: error.message
-      });
-    }
+// Get Digital Persona service from services index
+const getService = () => {
+  try {
+    return getDigitalPersonaService();
+  } catch (error) {
+    throw new Error('Digital Persona service not available. Please ensure the server is properly initialized.');
   }
-  next();
 };
 
 // Sync social media content
-router.post('/sync', ensureInitialized, async (req, res) => {
+router.post('/sync', async (req, res) => {
   try {
+    const digitalPersonaService = getService();
     const { platforms } = req.body;
     
     logger.info('Starting social media sync...', { platforms });
@@ -55,8 +44,9 @@ router.post('/sync', ensureInitialized, async (req, res) => {
 });
 
 // Query digital persona
-router.post('/query', ensureInitialized, async (req, res) => {
+router.post('/query', async (req, res) => {
   try {
+    const digitalPersonaService = getService();
     const {
       query,
       maxResults = 5,
@@ -95,8 +85,9 @@ router.post('/query', ensureInitialized, async (req, res) => {
 });
 
 // Get digital persona statistics
-router.get('/stats', ensureInitialized, async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
+    const digitalPersonaService = getService();
     const stats = await digitalPersonaService.getDigitalPersonaStats();
     
     res.json({
@@ -114,8 +105,9 @@ router.get('/stats', ensureInitialized, async (req, res) => {
 });
 
 // Remove content from specific platform
-router.delete('/platform/:platform', ensureInitialized, async (req, res) => {
+router.delete('/platform/:platform', async (req, res) => {
   try {
+    const digitalPersonaService = getService();
     const { platform } = req.params;
     
     if (!['blogger', 'facebook', 'instagram'].includes(platform)) {
@@ -144,8 +136,9 @@ router.delete('/platform/:platform', ensureInitialized, async (req, res) => {
 });
 
 // Get sync status for all platforms
-router.get('/sync-status', ensureInitialized, async (req, res) => {
+router.get('/sync-status', async (req, res) => {
   try {
+    const digitalPersonaService = getService();
     const stats = await digitalPersonaService.getDigitalPersonaStats();
     
     const syncStatus = {
@@ -178,16 +171,20 @@ router.get('/health', async (req, res) => {
   try {
     const health = {
       status: 'healthy',
-      initialized: isInitialized,
       timestamp: new Date().toISOString()
     };
     
-    if (isInitialized) {
+    try {
+      const digitalPersonaService = getService();
       const stats = await digitalPersonaService.getDigitalPersonaStats();
+      health.initialized = true;
       health.contentStats = {
         totalPlatforms: Object.keys(stats.platforms).length,
         totalContent: stats.totalContent
       };
+    } catch (serviceError) {
+      health.initialized = false;
+      health.serviceError = serviceError.message;
     }
     
     res.json(health);

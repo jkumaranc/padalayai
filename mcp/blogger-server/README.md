@@ -1,41 +1,49 @@
 # blogger-server MCP Server
 
-A MCP server for blogger service
+A MCP server for Google Blogger service integration
 
-This is a TypeScript-based MCP server that implements a simple notes system. It demonstrates core MCP concepts by providing:
-
-- Resources representing text notes with URIs and metadata
-- Tools for creating new notes
-- Prompts for generating summaries of notes
+This is a TypeScript-based MCP server that provides access to Google Blogger API functionality. It allows you to retrieve blog posts, search content, and get blog information through MCP tools.
 
 ## Features
 
-### Resources
-- List and access notes via `note://` URIs
-- Each note has a title, content and metadata
-- Plain text mime type for simple content access
-
 ### Tools
-- `create_note` - Create new text notes
-  - Takes title and content as required parameters
-  - Stores note in server state
+- `get_blog_posts` - Retrieve blog posts from Blogger
+  - Optional parameters: maxResults (1-500), pageToken for pagination, labels for filtering
+  - Returns processed posts with stripped HTML content
 
-### Prompts
-- `summarize_notes` - Generate a summary of all stored notes
-  - Includes all note contents as embedded resources
-  - Returns structured prompt for LLM summarization
+- `get_blog_info` - Get basic information about the blog
+  - Returns blog metadata including name, description, URL, and post counts
 
-## Development
+- `search_posts` - Search for posts containing specific text
+  - Required parameter: query (search text)
+  - Optional parameter: maxResults (1-100)
+  - Returns matching posts with relevance ranking
 
-Install dependencies:
+## Setup
+
+1. Install dependencies:
 ```bash
 npm install
 ```
 
-Build the server:
+2. Configure environment variables:
+```bash
+cp .env.example .env
+```
+Then edit `.env` and add your Blogger API credentials:
+- `BLOGGER_API_KEY`: Your Google Blogger API key
+- `BLOG_ID`: Your Blogger blog ID
+
+To get these credentials:
+- Get a Blogger API key from [Google Cloud Console](https://console.cloud.google.com/)
+- Find your blog ID in your Blogger dashboard URL or via the Blogger API
+
+3. Build the server:
 ```bash
 npm run build
 ```
+
+## Development
 
 For development with auto-rebuild:
 ```bash
