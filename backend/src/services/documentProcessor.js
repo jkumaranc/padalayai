@@ -4,7 +4,6 @@ import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import { v4 as uuidv4 } from 'uuid';
 import winston from 'winston';
-import { extractTextFromPages } from './pagesParser.js';
 
 const logger = winston.createLogger({
   level: 'info',
@@ -130,9 +129,11 @@ export class DocumentProcessor {
         case 'text/plain':
         case 'text/markdown':
           return fileBuffer.toString('utf8');
+
         case 'application/vnd.apple.pages':
         case 'application/x-iwork-pages-sffpages':
-          return await extractTextFromPages(filepath)
+          // Apple Pages files are not supported without additional parsing
+          throw new Error('Apple Pages files are not currently supported. Please export to PDF or DOCX format.');
 
         default:
           // Try to read as text
@@ -296,6 +297,21 @@ export class DocumentProcessor {
     return results
       .sort((a, b) => b.relevanceScore - a.relevanceScore)
       .slice(0, limit);
+  }
+
+  // Method to add already processed documents (for social media content)
+  async addDocument(documentInfo) {
+    try {
+      // Store document
+      this.documents.set(documentInfo.id, documentInfo);
+      await this.saveDocuments();
+      
+      logger.info(`Added processed document: ${documentInfo.filename}`);
+      return documentInfo;
+    } catch (error) {
+      logger.error(`Error adding document ${documentInfo.filename}:`, error);
+      throw error;
+    }
   }
 
   getDocumentStats() {

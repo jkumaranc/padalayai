@@ -52,7 +52,9 @@ router.post('/query', async (req, res) => {
       maxResults = 5,
       temperature = 0.7,
       includeContext = true,
-      documentIds = []
+      documentIds = [],
+      analysisType = 'content',
+      enhancedQuery
     } = req.body;
 
     if (!query || typeof query !== 'string') {
@@ -61,14 +63,32 @@ router.post('/query', async (req, res) => {
       });
     }
 
-    logger.info('Processing digital persona query:', { query: query.substring(0, 100) });
+    logger.info('Processing digital persona query:', { 
+      query: query.substring(0, 100),
+      analysisType,
+      hasEnhancedQuery: !!enhancedQuery,
+      documentIds: documentIds.length
+    });
 
-    const result = await digitalPersonaService.queryDigitalPersona(query, {
+    // Use enhanced query if provided, otherwise use original query
+    const queryToUse = enhancedQuery || query;
+
+    // If no specific document IDs provided, search all content (documents + social media)
+    // If document IDs are provided, respect the selection
+    const searchOptions = {
       maxResults,
       temperature,
       includeContext,
-      documentIds
-    });
+      analysisType
+    };
+
+    // Only add documentIds filter if specific documents are selected
+    // Empty array means "search all content"
+    if (documentIds && documentIds.length > 0) {
+      searchOptions.documentIds = documentIds;
+    }
+
+    const result = await digitalPersonaService.queryDigitalPersona(queryToUse, searchOptions);
 
     res.json({
       success: true,

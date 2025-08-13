@@ -7,15 +7,16 @@ import {
   History, 
   Settings,
   Brain,
-  User
+  User,
+  Search,
+  BarChart3
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Documents', href: '/documents', icon: FileText },
-  { name: 'Query', href: '/query', icon: MessageSquare },
-  { name: 'Digital Persona', href: '/digital-persona', icon: User },
+  { name: 'Content Analysis', href: '/content-analysis', icon: BarChart3 },
   { name: 'History', href: '/history', icon: History },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]

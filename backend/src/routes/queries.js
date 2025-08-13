@@ -18,7 +18,9 @@ router.post('/', validateQuery, async (req, res) => {
       documentIds = [], 
       maxResults = 5, 
       temperature = 0.7,
-      includeContext = true 
+      includeContext = true,
+      analysisType = 'content',
+      enhancedQuery
     } = req.body;
 
     if (!query || query.trim().length === 0) {

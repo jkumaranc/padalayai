@@ -177,9 +177,7 @@ export const validateFile = (file) => {
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain',
-    'text/markdown',
-    'application/vnd.apple.pages',
-    'application/x-iwork-pages-sffpages'
+    'text/markdown'
   ]
 
   if (file.size > maxSize) {
@@ -188,7 +186,7 @@ export const validateFile = (file) => {
 
   console.log(file.type)
   if (!allowedTypes.includes(file.type)) {
-    throw new Error('File type not supported. Please upload PDF, DOCX, TXT, Pages or MD files.')
+    throw new Error('File type not supported. Please upload PDF, DOCX, TXT, or MD files.')
   }
 
   return true

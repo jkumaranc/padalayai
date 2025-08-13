@@ -45,13 +45,18 @@ export async function initializeServices() {
       mcpClient = null;
     }
 
-    // Initialize Digital Persona Service
+    // Set MCP client for RAG service
+    if (mcpClient) {
+      ragService.setMCPClient(mcpClient);
+    }
+
+    // Initialize Digital Persona Service with shared services
     digitalPersonaService = new DigitalPersonaService();
     if (mcpClient) {
       digitalPersonaService.setMCPClient(mcpClient);
     }
-    await digitalPersonaService.initialize();
-    logger.info('Digital persona service initialized');
+    await digitalPersonaService.initialize(ragService, documentProcessor);
+    logger.info('Digital persona service initialized with shared services');
 
     logger.info('All services initialized successfully');
 

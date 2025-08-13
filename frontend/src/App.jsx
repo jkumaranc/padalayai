@@ -1,25 +1,18 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
-import Layout from './components/Layout'
-import Dashboard from './pages/Dashboard'
+import WriterWorkspace from './pages/WriterWorkspace'
 import Documents from './pages/Documents'
-import Query from './pages/Query'
 import History from './pages/History'
 import Settings from './pages/Settings'
-import DigitalPersona from './pages/DigitalPersona'
 
 function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/documents" element={<Documents />} />
-        <Route path="/query" element={<Query />} />
-        <Route path="/digital-persona" element={<DigitalPersona />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/settings" element={<Settings />} />
-      </Routes>
-    </Layout>
+    <Routes>
+      <Route path="/" element={<WriterWorkspace />} />
+      <Route path="/documents" element={<Documents />} />
+      <Route path="/history" element={<History />} />
+      <Route path="/settings" element={<Settings />} />
+    </Routes>
   )
 }
 

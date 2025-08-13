@@ -46,22 +46,31 @@ PadalayAI is your personal AI author's assistant, using Large Language Models (L
 │   React Frontend│                    │           Express Backend           │
 │                 │                    │                                     │
 │  ┌─────────────┐│                    │  ┌─────────────┐ ┌─────────────────┐│
-│  │ Documents   ││                    │  │   Routes    │ │   Middleware    ││
-│  │ Query       ││                    │  │             │ │                 ││
-│  │ History     ││                    │  │ documents.js│ │ validation.js   ││
-│  │ Dashboard   ││                    │  │ queries.js  │ │ cors, helmet    ││
-│  └─────────────┘│                    │  └─────────────┘ └─────────────────┘│
-│                 │                    │           │                         │
-│  ┌─────────────┐│                    │           ▼                         │
-│  │   API       ││                    │  ┌─────────────────────────────────┐│
-│  │  Service    ││                    │  │           Services              ││
-│  └─────────────┘│                    │  │                                 ││
-└─────────────────┘                    │  │ ┌─────────────┐ ┌─────────────┐ ││
+│  │WriterWorksp ││                    │  │   Routes    │ │   Middleware    ││
+│  │Documents    ││                    │  │             │ │                 ││
+│  │History      ││                    │  │ documents.js│ │ validation.js   ││
+│  │Settings     ││                    │  │ queries.js  │ │ cors, helmet    ││
+│  └─────────────┘│                    │  │digitalPers. │ │ rate limiting   ││
+│                 │                    │  └─────────────┘ └─────────────────┘│
+│  ┌─────────────┐│                    │           │                         │
+│  │   API       ││                    │           ▼                         │
+│  │  Service    ││                    │  ┌─────────────────────────────────┐│
+│  └─────────────┘│                    │  │           Services              ││
+└─────────────────┘                    │  │                                 ││
+                                       │  │ ┌─────────────┐ ┌─────────────┐ ││
                                        │  │ │DocumentProc │ │ RAGService  │ ││
                                        │  │ │             │ │             │ ││
                                        │  │ │ PDF Parse   │ │ Embeddings  │ ││
                                        │  │ │ Text Chunk  │ │ Vector Search│ ││
                                        │  │ └─────────────┘ └─────────────┘ ││
+                                       │  │                                 ││
+                                       │  │ ┌─────────────┐ ┌─────────────┐ ││
+                                       │  │ │DigitalPers. │ │ MCP Client  │ ││
+                                       │  │ │ Service     │ │             │ ││
+                                       │  │ │ Social Sync │ │ Blogger API │ ││
+                                       │  │ │ Analysis    │ │ Facebook    │ ││
+                                       │  │ └─────────────┘ │ Instagram   │ ││
+                                       │  │                 └─────────────┘ ││
                                        │  └─────────────────────────────────┘│
                                        └─────────────────────────────────────┘
                                                         │
@@ -84,41 +93,64 @@ PadalayAI is your personal AI author's assistant, using Large Language Models (L
 │  │ │ Vector Store│ │    │ │ IDF Embed   │ │    │                         │  │
 │  │ └─────────────┘ │    │ └─────────────┘ │    │                         │  │
 │  └─────────────────┘    └─────────────────┘    └─────────────────────────┘  │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        MCP Servers                                  │   │
+│  │                                                                     │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │   │
+│  │  │ Blogger     │  │ Facebook    │  │ Instagram   │                 │   │
+│  │  │ Server      │  │ Server      │  │ Server      │                 │   │
+│  │  │             │  │             │  │             │                 │   │
+│  │  │ Blog Posts  │  │ Posts       │  │ Posts       │                 │   │
+│  │  │ Comments    │  │ Comments    │  │ Stories     │                 │   │
+│  │  │ Analytics   │  │ Analytics   │  │ Analytics   │                 │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘                 │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────┘
 
                                 Data Flow
                                ═══════════
 
-1. User uploads document → Document Processing → Text Extraction & Chunking
-2. Chunks → Embedding Generation → Vector Storage (ChromaDB/In-Memory)
-3. User submits query → Query Embedding → Similarity Search → Context Retrieval
-4. Context + Query → LLM Processing → Generated Answer → Response to User
-5. All interactions logged → Query History → Persistent Storage
+1. User uploads document OR syncs social media content → Document Processing
+2. Text Extraction & Chunking → Embedding Generation → Vector Storage
+3. User submits query → Enhanced with Digital Persona analysis
+4. Query Embedding → Similarity Search → Context Retrieval from all sources
+5. Context + Query → LLM Processing → Generated Answer → Response to User
+6. All interactions logged → Query History → Persistent Storage
+7. Social media sync → MCP Servers → Platform APIs → Content ingestion
 
                               Key Features
                              ═══════════════
 
+• Multi-Source Analysis: Documents + Social Media content (Blogger, Facebook, Instagram)
+• Digital Persona: AI-powered writing style and voice analysis across platforms
+• MCP Integration: Modular server architecture for platform-specific APIs
 • Graceful Degradation: Falls back to in-memory storage if ChromaDB unavailable
 • Error Recovery: Automatic ChromaDB reconnection and fallback mechanisms  
 • Upload Safety: Nodemon ignores upload directories to prevent server restarts
 • Robust Processing: Handles PDF, DOCX, TXT, MD with comprehensive error handling
 ```
 
+![alt text](image.png)
+
 ### Backend (Node.js/Express)
 ```
 backend/
 ├── src/
-│   ├── server.js              # Main server entry point
-│   ├── routes/                # API route handlers
-│   │   ├── documents.js       # Document upload/management
-│   │   └── queries.js         # Query processing
-│   ├── services/              # Business logic
+│   ├── server.js                 # Main server entry point
+│   ├── routes/                   # API route handlers
+│   │   ├── documents.js          # Document upload/management
+│   │   ├── queries.js            # Query processing
+│   │   └── digitalPersona.js     # Digital persona & social sync
+│   ├── services/                 # Business logic
 │   │   ├── documentProcessor.js  # Document parsing & chunking
 │   │   ├── ragService.js         # RAG implementation
 │   │   ├── vectorStore.js        # Vector storage (in-memory)
+│   │   ├── digitalPersonaService.js # Social media integration
+│   │   ├── mcpClient.js          # MCP server management
 │   │   └── index.js              # Service orchestration
-│   └── middleware/            # Express middleware
-│       └── validation.js      # Request validation
+│   └── middleware/               # Express middleware
+│       └── validation.js         # Request validation
 ├── package.json
 └── .env.example
 ```
@@ -130,9 +162,8 @@ frontend/
 │   ├── components/            # Reusable UI components
 │   │   └── Layout.jsx         # Main layout wrapper
 │   ├── pages/                 # Page components
-│   │   ├── Dashboard.jsx      # Overview dashboard
+│   │   ├── WriterWorkspace.jsx # Main workspace (home page)
 │   │   ├── Documents.jsx      # Document management
-│   │   ├── Query.jsx          # Question interface
 │   │   ├── History.jsx        # Query history
 │   │   └── Settings.jsx       # Configuration
 │   ├── services/              # API communication
@@ -256,26 +287,31 @@ CORS_ORIGIN=http://localhost:3000
 
 ## Usage Guide
 
-### 1. Upload Documents
-- Navigate to the **Documents** page
+### 1. Writer's Workspace (Main Interface)
+- The **Writer's Workspace** is your main hub for AI-powered writing analysis
+- Choose your analysis focus: Content & Themes, Writing Style, Author Voice, or Genre & Form
+- Select documents or sync social media content to analyze
+- Ask questions about your writing in natural language
+- Get AI-powered insights with source attribution and confidence scores
+
+### 2. Upload Documents
+- Navigate to the **Documents** page or use the upload section in the workspace
 - Drag & drop files or click to select
 - Supported formats: PDF, DOCX, TXT, MD
 - Maximum file size: 50MB per file
 
-### 2. Ask Questions
-- Go to the **Query** page
-- Select which documents to analyze
-- Type your question in natural language
-- Adjust advanced settings if needed
-- Click "Ask Question" to get AI-powered insights
+### 3. Social Media Integration
+- Sync content from Blogger, Facebook, and Instagram
+- Use the sync button in the workspace sidebar
+- Analyze your writing across all platforms for consistent voice and style
 
-### 3. Review History
+### 4. Review History
 - Visit the **History** page to see all past queries
 - Search through previous questions and answers
 - Export results for external use
 - Expand entries to see source citations
 
-### 4. Configure Settings
+### 5. Configure Settings
 - Access the **Settings** page for customization
 - Adjust AI parameters (temperature, max results)
 - Monitor system health and status
@@ -297,6 +333,12 @@ CORS_ORIGIN=http://localhost:3000
 - `POST /api/queries/search` - Semantic search
 - `POST /api/queries/export` - Export query results
 - `DELETE /api/queries/history` - Clear query history
+
+### Digital Persona
+- `POST /api/digital-persona/query` - Enhanced query with digital persona analysis
+- `POST /api/digital-persona/sync` - Sync social media content
+- `GET /api/digital-persona/sync-status` - Get sync status for all platforms
+- `GET /api/digital-persona/stats` - Get digital persona statistics
 
 ### Health
 - `GET /health` - Basic health check

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useDropzone } from 'react-dropzone'
+import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { 
   Upload, 
@@ -10,7 +11,9 @@ import {
   Eye,
   AlertCircle,
   CheckCircle,
-  Loader
+  Loader,
+  ArrowLeft,
+  PenTool
 } from 'lucide-react'
 import { documentAPI, formatFileSize, formatDate, validateFile, handleAPIError } from '../services/api'
 
@@ -103,14 +106,40 @@ function Documents() {
   const documents = documentsData?.documents || []
 
   return (
-    <div className="space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Documents</h1>
-        <p className="mt-2 text-gray-600">
-          Upload and manage your documents for AI analysis
-        </p>
-      </div>
+      <header className="bg-white/80 backdrop-blur-sm border-b border-amber-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Link to="/" className="p-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg">
+                <PenTool className="h-6 w-6 text-white" />
+              </Link>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Document Manager</h1>
+                <p className="text-sm text-amber-600">Upload & organize your writing</p>
+              </div>
+            </div>
+            
+            <Link
+              to="/"
+              className="flex items-center text-gray-600 hover:text-gray-900 font-medium"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Workspace
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* Page Header */}
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Documents</h2>
+          <p className="mt-2 text-gray-600">
+            Upload and manage your documents for AI analysis
+          </p>
+        </div>
 
       {/* Upload Area */}
       <div className="card">
@@ -293,6 +322,7 @@ function Documents() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   )

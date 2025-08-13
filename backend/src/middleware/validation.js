@@ -21,7 +21,9 @@ const querySchema = Joi.object({
   maxResults: Joi.number().min(1).max(20).optional(),
   temperature: Joi.number().min(0).max(1).optional(),
   includeContext: Joi.boolean().optional(),
-  threshold: Joi.number().min(0).max(1).optional()
+  threshold: Joi.number().min(0).max(1).optional(),
+  analysisType: Joi.string().valid('content', 'style', 'persona', 'genre').optional(),
+  enhancedQuery: Joi.string().max(2000).optional()
 });
 
 // Search validation schema

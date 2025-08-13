@@ -39,14 +39,26 @@ export class DigitalPersonaService {
     logger.info('MCP client set for DigitalPersonaService');
   }
 
-  async initialize() {
+  async initialize(sharedRAGService = null, sharedDocumentProcessor = null) {
     try {
-      // Initialize RAG service and document processor
-      this.ragService = new RAGService();
-      await this.ragService.initialize();
+      // Use shared services if provided, otherwise create new ones
+      if (sharedRAGService) {
+        this.ragService = sharedRAGService;
+        logger.info('Using shared RAG service for Digital Persona');
+      } else {
+        this.ragService = new RAGService();
+        await this.ragService.initialize();
+        logger.info('Created new RAG service for Digital Persona');
+      }
       
-      this.documentProcessor = new DocumentProcessor();
-      await this.documentProcessor.initializeStorage();
+      if (sharedDocumentProcessor) {
+        this.documentProcessor = sharedDocumentProcessor;
+        logger.info('Using shared Document Processor for Digital Persona');
+      } else {
+        this.documentProcessor = new DocumentProcessor();
+        await this.documentProcessor.initializeStorage();
+        logger.info('Created new Document Processor for Digital Persona');
+      }
 
       this.isInitialized = true;
       logger.info('Digital Persona service initialized successfully');
@@ -225,6 +237,11 @@ export class DigitalPersonaService {
         
         // Add to RAG service
         await this.ragService.addDocument(processedDoc);
+        
+        // Also add to document processor so it appears in document lists
+        if (this.documentProcessor && this.documentProcessor.addDocument) {
+          await this.documentProcessor.addDocument(processedDoc);
+        }
         
         processedItems.push(processedDoc);
         

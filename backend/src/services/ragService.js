@@ -17,6 +17,28 @@ export class RAGService {
     this.collection = null;
     this.queryHistory = new Map();
     this.isInitialized = false;
+    this.mcpClient = null; // Add MCP client support
+  }
+
+  // Method to set MCP client (to be called during initialization)
+  setMCPClient(mcpClient) {
+    this.mcpClient = mcpClient;
+    logger.info('MCP client set for RAGService');
+  }
+
+  // Method to call MCP tools
+  async callMCPTool(serverName, toolName, args = {}) {
+    if (!this.mcpClient) {
+      logger.warn('MCP client not available, skipping MCP tool call');
+      return null;
+    }
+
+    try {
+      return await this.mcpClient.callTool(serverName, toolName, args);
+    } catch (error) {
+      logger.error(`Error calling MCP tool ${serverName}:${toolName}:`, error);
+      return null; // Return null instead of throwing to allow query to continue
+    }
   }
 
   async initialize() {
@@ -283,7 +305,9 @@ export class RAGService {
       documentIds = [],
       maxResults = 5,
       temperature = 0.7,
-      includeContext = true
+      includeContext = true,
+      filterBy = null, // New: filter by metadata
+      analysisType = 'content' // New: 'content', 'style', 'persona', 'genre'
     } = options;
 
     if (!this.isInitialized) {
@@ -296,18 +320,29 @@ export class RAGService {
       // Generate query embedding
       const queryEmbedding = await this.generateEmbedding(query);
 
-      // Search for relevant chunks
+      // Search for relevant chunks from documents
       const searchResults = await this.searchSimilarChunks({
         embedding: queryEmbedding,
         documentIds,
         maxResults: maxResults * 2 // Get more results for better context
       });
 
-      // Generate answer using LLM
+      // Try to get additional context from MCP servers if available
+      const mcpContext = await this.getMCPContext(query, analysisType);
+
+      // Combine document chunks with MCP context
+      let allContext = [...searchResults.chunks];
+      if (mcpContext && mcpContext.length > 0) {
+        allContext = [...allContext, ...mcpContext];
+        logger.info(`Added ${mcpContext.length} MCP context items to query`);
+      }
+
+      // Generate answer using LLM with combined context
       const answer = await this.generateAnswer({
         query,
-        context: searchResults.chunks,
-        temperature
+        context: allContext,
+        temperature,
+        analysisType
       });
 
       // Create query result
@@ -315,22 +350,27 @@ export class RAGService {
         id: uuidv4(),
         query,
         answer,
-        sources: searchResults.chunks.slice(0, maxResults).map(chunk => ({
+        sources: allContext.slice(0, maxResults).map(chunk => ({
           id: chunk.id,
           text: chunk.text,
-          documentId: chunk.metadata.documentId,
-          filename: chunk.metadata.filename,
-          chunkIndex: chunk.metadata.chunkIndex,
-          similarity: chunk.similarity
+          documentId: chunk.metadata?.documentId || chunk.id,
+          filename: chunk.metadata?.filename || chunk.filename || 'MCP Source',
+          chunkIndex: chunk.metadata?.chunkIndex || 0,
+          similarity: chunk.similarity || 1.0,
+          platform: chunk.metadata?.platform || chunk.platform,
+          url: chunk.metadata?.url || chunk.url
         })),
-        context: includeContext ? searchResults.chunks.map(c => c.text).join('\n\n') : undefined,
-        confidence: this.calculateConfidence(searchResults.chunks),
+        context: includeContext ? allContext.map(c => c.text).join('\n\n') : undefined,
+        confidence: this.calculateConfidence(allContext),
         documentsSearched: searchResults.documentsSearched,
+        mcpSourcesUsed: mcpContext ? mcpContext.length : 0,
         timestamp: new Date().toISOString(),
         metadata: {
           temperature,
           maxResults,
-          totalChunksFound: searchResults.chunks.length
+          totalChunksFound: searchResults.chunks.length,
+          mcpContextAdded: mcpContext ? mcpContext.length : 0,
+          analysisType
         }
       };
 
@@ -344,6 +384,57 @@ export class RAGService {
       logger.error('Error processing RAG query:', error);
       throw error;
     }
+  }
+
+  // New method to get additional context from MCP servers
+  async getMCPContext(query, analysisType = 'content') {
+    if (!this.mcpClient) {
+      return [];
+    }
+
+    const mcpContext = [];
+
+    try {
+      // Try to get recent blog posts from blogger server for additional context
+      const bloggerResponse = await this.callMCPTool('blogger-server', 'get_blog_posts', {
+        maxResults: 5 // Get a few recent posts for context
+      });
+
+      if (bloggerResponse && bloggerResponse.content && bloggerResponse.content[0]) {
+        const data = JSON.parse(bloggerResponse.content[0].text);
+        
+        // Convert blog posts to context chunks
+        data.posts.forEach((post, index) => {
+          mcpContext.push({
+            id: `blogger-${post.id}`,
+            text: `Title: ${post.title}\n\nContent: ${post.content}`,
+            filename: `Blog Post: ${post.title}`,
+            platform: 'blogger',
+            url: post.url,
+            similarity: 0.8, // Give MCP sources a decent similarity score
+            metadata: {
+              platform: 'blogger',
+              originalId: post.id,
+              title: post.title,
+              url: post.url,
+              publishedAt: post.published
+            }
+          });
+        });
+
+        logger.info(`Retrieved ${data.posts.length} blog posts from MCP blogger server`);
+      }
+
+      // TODO: Add other MCP servers (Facebook, Instagram) when they're ready
+      // const facebookResponse = await this.callMCPTool('facebook-server', 'get_facebook_posts', { limit: 5 });
+      // const instagramResponse = await this.callMCPTool('instagram-server', 'get_instagram_media', { limit: 5 });
+
+    } catch (error) {
+      logger.warn('Error getting MCP context:', error);
+      // Don't throw error, just continue without MCP context
+    }
+
+    return mcpContext;
   }
 
   async searchSimilarChunks(options) {
@@ -393,13 +484,23 @@ export class RAGService {
   }
 
   async generateAnswer(options) {
-    const { query, context, temperature = 0.7 } = options;
+    const { query, context, temperature = 0.7, analysisType = 'content' } = options;
 
     if (this.openai) {
       try {
         const contextText = context.map(chunk => chunk.text || chunk).join('\n\n');
         
-        const prompt = `Based on the following context from the author's documents, please answer the question. If the answer cannot be found in the context, please say so.
+        // Create analysis-specific system prompts
+        const systemPrompts = {
+          content: 'You are a helpful assistant that analyzes documents and social media content for authors. Provide clear, accurate answers based on the provided context from both documents and social media posts. If information is not available in the context, clearly state that.',
+          style: 'You are a writing style analyst. Analyze the writing style, tone, formality, sentence structure, and voice based on the provided context from documents and social media content. Focus on patterns and characteristics of the author\'s writing.',
+          persona: 'You are an author persona analyst. Analyze the author\'s voice, personality traits, expertise level, and communication style based on the provided context from documents and social media content. Focus on how the author presents themselves.',
+          genre: 'You are a content genre analyst. Analyze and classify the content types, themes, and genres based on the provided context from documents and social media content. Focus on categorization and content characteristics.'
+        };
+
+        const systemPrompt = systemPrompts[analysisType] || systemPrompts.content;
+        
+        const prompt = `Based on the following context from the author's documents and social media content, please answer the question. The context includes both uploaded documents and recent social media posts for comprehensive analysis.
 
 Context:
 ${contextText}
@@ -413,7 +514,7 @@ Answer:`;
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful assistant that analyzes documents for authors. Provide clear, accurate answers based on the provided context. If information is not available in the context, clearly state that.'
+              content: systemPrompt
             },
             {
               role: 'user',
